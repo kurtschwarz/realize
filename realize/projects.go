@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"log"
 	"math/big"
 	"os"
@@ -16,7 +15,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 var (
@@ -51,7 +53,7 @@ type Project struct {
 	stop               chan bool
 	files              int64
 	folders            int64
-	last			   last
+	last               last
 	paths              []string
 	Name               string            `yaml:"name" json:"name"`
 	Path               string            `yaml:"path" json:"path"`
@@ -64,7 +66,7 @@ type Project struct {
 }
 
 // Last is used to save info about last file changed
-type last struct{
+type last struct {
 	file string
 	time time.Time
 }
@@ -483,7 +485,7 @@ func (p *Project) walk(path string, info os.FileInfo, err error) error {
 		result := p.watcher.Walk(path, p.init)
 		if result != "" {
 			if p.parent.Settings.Recovery.Index {
-				log.Println("Indexing",path)
+				log.Println("Indexing", path)
 			}
 			if info.IsDir() {
 				// tools dir
@@ -547,7 +549,7 @@ func (p *Project) run(path string, stream chan Response, stop <-chan bool) (err 
 	defer func() {
 		// https://github.com/golang/go/issues/5615
 		// https://github.com/golang/go/issues/6720
-		build.Process.Signal(os.Interrupt)
+		build.Process.Signal(syscall.SIGTERM)
 	}()
 
 	// custom error pattern
@@ -673,7 +675,7 @@ func (c *Command) exec(base string, stop <-chan bool) (response Response) {
 	select {
 	case <-stop:
 		// Stop running command
-		ex.Process.Kill()
+		ex.Process.Signal(syscall.SIGTERM)
 	case err := <-done:
 		// Command completed
 		response.Name = c.Cmd

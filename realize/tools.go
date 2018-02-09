@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 // Tool info
@@ -140,7 +141,7 @@ func (t *Tool) Exec(path string, stop <-chan bool) (response Response) {
 		select {
 		case <-stop:
 			// Stop running command
-			cmd.Process.Kill()
+			cmd.Process.Signal(syscall.SIGTERM)
 		case err := <-done:
 			// Command completed
 			response.Name = t.name
@@ -178,7 +179,7 @@ func (t *Tool) Compile(path string, stop <-chan bool) (response Response) {
 	select {
 	case <-stop:
 		// Stop running command
-		cmd.Process.Kill()
+		cmd.Process.Signal(syscall.SIGTERM)
 	case err := <-done:
 		// Command completed
 		if err != nil {
