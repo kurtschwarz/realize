@@ -549,7 +549,9 @@ func (p *Project) run(path string, stream chan Response, stop <-chan bool) (err 
 	defer func() {
 		// https://github.com/golang/go/issues/5615
 		// https://github.com/golang/go/issues/6720
-		build.Process.Signal(syscall.SIGTERM)
+		if build != nil && build.Process != nil {
+			build.Process.Signal(syscall.SIGTERM)
+		}
 	}()
 
 	// custom error pattern
